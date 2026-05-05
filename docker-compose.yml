@@ -50,7 +50,11 @@ services:
       #
       # Set CLAUDE_CONFIG_PATH in the Portainer stack env to an absolute
       # path on a data pool, e.g. /mnt/tank/apps/claude-desktop/config.
-      - ${CLAUDE_CONFIG_PATH:-./config}:/home/claude/.config/Claude
+      # `:?` makes compose-up fail loudly if it's unset/empty instead of
+      # silently bind-mounting to ./config (which on TrueNAS lands on the
+      # boot-pool root dataset and is mounted noexec, breaking the
+      # claude-code spawn at runtime).
+      - ${CLAUDE_CONFIG_PATH:?CLAUDE_CONFIG_PATH must be set to an absolute host path on a data pool with exec=on, e.g. /mnt/tank/apps/claude-desktop/config}:/home/claude/.config/Claude
       # Optional: expose host files to MCP filesystem servers running inside
       # the container. Uncomment and point to whatever you want Claude to see.
       # - /mnt/tank/projects:/home/claude/projects
