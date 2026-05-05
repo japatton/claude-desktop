@@ -1,0 +1,7 @@
+.git
+.gitignore
+.claude
+config/
+*.md
+docker-compose.yml
+.env
