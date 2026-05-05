@@ -54,8 +54,9 @@ services:
     shm_size: "1gb"
 
     # Healthcheck: noVNC's HTTP endpoint should respond once everything's up.
+    # curl is already installed in the image.
     healthcheck:
-      test: ["CMD", "sh", "-c", "exec 3<>/dev/tcp/127.0.0.1/6080 && echo -e 'GET / HTTP/1.0\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q 200"]
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:6080/"]
       interval: 30s
       timeout: 5s
       retries: 3
