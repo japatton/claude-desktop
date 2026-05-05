@@ -30,11 +30,10 @@ services:
       - "6080:6080"
 
     environment:
-      # Match these to the dataset owner (find with `ls -n` on the host path).
-      # On TrueNAS, the apps user is typically 568:568 — adjust if you bind
-      # to a dataset owned by a different user.
-      PUID: "1000"
-      PGID: "1000"
+      # TrueNAS apps user (`id apps` -> uid=568 gid=568). Override here if you
+      # bind to a dataset owned by a different user.
+      PUID: "568"
+      PGID: "568"
       TZ: "America/New_York"
       SCREEN_GEOMETRY: "1920x1080x24"
       # Set a password to require auth on the noVNC page. Leave blank for none
