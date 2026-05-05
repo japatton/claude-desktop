@@ -50,6 +50,14 @@ RUN curl -fsSL https://pkg.claude-desktop-debian.dev/KEY.gpg \
  && apt-get install -y --no-install-recommends claude-desktop \
  && rm -rf /var/lib/apt/lists/*
 
+# Pre-install the Claude Code CLI system-wide. Claude Desktop spawns its own
+# bundled copy from ~/.config/Claude/claude-code/<ver>/claude, but having a
+# global `claude` available means there's always a working CLI inside the
+# container regardless of bind-mount state, and any MCP server / tool that
+# expects `claude` on PATH just works.
+RUN npm install -g --omit=dev @anthropic-ai/claude-code \
+ && npm cache clean --force
+
 # Non-root user. UID/GID get fixed up at runtime in entrypoint.sh so bind-mounts
 # from TrueNAS datasets line up with the dataset owner.
 RUN groupadd -g 1000 ${USER} \

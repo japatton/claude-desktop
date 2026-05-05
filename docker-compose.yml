@@ -58,10 +58,10 @@ services:
     # Electron + Chromium need a decent /dev/shm or tabs crash.
     shm_size: "1gb"
 
-    # Healthcheck: noVNC's HTTP endpoint should respond once everything's up.
-    # curl is already installed in the image.
+    # Healthcheck: probe a file that actually exists in the noVNC web root.
+    # The Debian novnc package doesn't ship index.html, so / returns 404.
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:6080/"]
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:6080/vnc.html"]
       interval: 30s
       timeout: 5s
       retries: 3
