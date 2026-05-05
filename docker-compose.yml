@@ -12,10 +12,15 @@
 
 services:
   claude-desktop:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: claude-desktop:local
+    # Image is built by .github/workflows/build-publish.yml and pushed to GHCR.
+    # Pin to :latest for auto-updates, or to a :sha-xxxxxxx tag for reproducibility.
+    # If you'd rather build locally on the TrueNAS host, see README / project docs:
+    # comment the `image:` line, uncomment the `build:` block, and run
+    # `docker compose build` over SSH (Portainer can't build — it has no $HOME).
+    image: ghcr.io/japatton/claude-desktop:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: claude-desktop
     hostname: claude-desktop
     restart: unless-stopped
