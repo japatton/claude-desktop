@@ -41,10 +41,16 @@ services:
       VNC_PASSWORD: ""
 
     volumes:
-      # Claude Desktop config + chat history + MCP server config.
-      # Replace ./config with a TrueNAS dataset path, e.g.
-      #   /mnt/tank/apps/claude-desktop/config:/home/claude/.config/Claude
-      - ./config:/home/claude/.config/Claude
+      # Claude Desktop config + chat history + MCP server config + the bundled
+      # claude-code binary it spawns. MUST be on a dataset mounted exec
+      # (default for data pools; the boot-pool is mounted noexec, so do NOT
+      # let this fall back to ./config in Portainer's stack workdir on
+      # TrueNAS — it lives on the boot pool and Claude Desktop will EACCES
+      # when it tries to spawn its own claude-code helper).
+      #
+      # Set CLAUDE_CONFIG_PATH in the Portainer stack env to an absolute
+      # path on a data pool, e.g. /mnt/tank/apps/claude-desktop/config.
+      - ${CLAUDE_CONFIG_PATH:-./config}:/home/claude/.config/Claude
       # Optional: expose host files to MCP filesystem servers running inside
       # the container. Uncomment and point to whatever you want Claude to see.
       # - /mnt/tank/projects:/home/claude/projects
