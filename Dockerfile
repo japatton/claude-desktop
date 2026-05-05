@@ -28,6 +28,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # GUI stack + Electron runtime deps + tooling the apt-repo install needs.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl gnupg sudo tini gosu tzdata \
+      git openssh-client \
       xvfb x11vnc novnc websockify \
       openbox xterm \
       dbus-x11 \
