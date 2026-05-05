@@ -22,11 +22,25 @@ fi
 if [ "$(id -u "${USER}")" != "${PUID}" ] || [ "$(id -g "${USER}")" != "${PGID}" ]; then
   groupmod -o -g "${PGID}" "${USER}"
   usermod  -o -u "${PUID}" -g "${PGID}" "${USER}"
-  chown -R "${PUID}:${PGID}" "${HOME}"
 fi
 
-mkdir -p "${HOME}/.config/Claude"
-chown -R "${PUID}:${PGID}" "${HOME}/.config"
+# Always make sure $HOME and the standard XDG dirs exist and are writable by
+# the runtime user. We chown $HOME non-recursively (a recursive chown across
+# the bind-mounted .config/Claude can be slow or partially fail on some ZFS
+# datasets) and use `install -d` to create each xdg subdir with the correct
+# ownership in a single syscall.
+chown "${PUID}:${PGID}" "${HOME}"
+for d in .cache .config .local .local/share .local/state .vnc; do
+  install -d -m 0755 -o "${PUID}" -g "${PGID}" "${HOME}/${d}"
+done
+install -d -m 0700 -o "${PUID}" -g "${PGID}" "/tmp/runtime-${USER}"
+install -d -m 0755 -o "${PUID}" -g "${PGID}" "${HOME}/.config/Claude"
+
+# Best-effort chown on the bind-mount target. If the host dataset owner is
+# already 568:568 this is a no-op; otherwise it fixes up files Claude Desktop
+# wrote during a prior run with a different PUID. Don't let a partial failure
+# kill the entrypoint — the user can chown the dataset host-side instead.
+chown -R "${PUID}:${PGID}" "${HOME}/.config/Claude" 2>/dev/null || true
 
 # --- Clean stale X locks (image restart leaves these behind) ---
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 || true
@@ -70,7 +84,14 @@ websockify --web=/usr/share/novnc "${NOVNC_PORT}" "localhost:${VNC_PORT}" &
 # container. The container itself is the sandbox boundary here.
 exec gosu "${USER}" env \
   HOME="${HOME}" \
+  USER="${USER}" \
+  LOGNAME="${USER}" \
   DISPLAY="${DISPLAY}" \
   DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS}" \
   XDG_RUNTIME_DIR="/tmp/runtime-${USER}" \
+  XDG_CACHE_HOME="${HOME}/.cache" \
+  XDG_CONFIG_HOME="${HOME}/.config" \
+  XDG_DATA_HOME="${HOME}/.local/share" \
+  XDG_STATE_HOME="${HOME}/.local/state" \
+  PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
   claude-desktop --no-sandbox
