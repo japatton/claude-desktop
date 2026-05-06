@@ -68,10 +68,13 @@ services:
     # Electron + Chromium need a decent /dev/shm or tabs crash.
     shm_size: "1gb"
 
-    # Healthcheck: hit KasmVNC's web UI root. KasmVNC serves the client at /
-    # (200 OK), so a plain HTTP probe is enough.
+    # Healthcheck: hit KasmVNC's web UI root. The probe runs unauthenticated,
+    # so a healthy KasmVNC with BasicAuth on returns 401 (challenge) — that
+    # still proves the server is listening and the auth layer is wired up,
+    # which is exactly what we want to verify. Treat both 200 and 401 as
+    # healthy; anything else (curl exit != 0, 5xx, connection refused) fails.
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8444/"]
+      test: ["CMD-SHELL", "code=$$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8444/) && { [ \"$$code\" = 200 ] || [ \"$$code\" = 401 ]; }"]
       interval: 30s
       timeout: 5s
       retries: 3
