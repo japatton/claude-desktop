@@ -5,7 +5,11 @@
 # Apps -> Custom App UI, point it at this compose, or run via dockge/portainer.
 #
 # After "docker compose up -d", open in any browser:
-#   http://<truenas-host>:6080/vnc.html?autoconnect=1&resize=remote
+#   http://<truenas-host>:8444/
+#
+# Log in with VNC_USERNAME (default "kasm_user") and the password from
+# VNC_PASSWORD. Plain HTTP — front this with a TLS-terminating reverse proxy
+# (Caddy / Traefik / nginx) for any non-LAN exposure.
 #
 # First-run: log in to your Claude account in the GUI. The session persists in
 # the bind-mounted ./config directory, so restarts keep you signed in.
@@ -26,8 +30,8 @@ services:
     restart: unless-stopped
 
     ports:
-      # noVNC web UI. Change the host side if 6080 is taken on the TrueNAS box.
-      - "6080:6080"
+      # KasmVNC web UI. Change the host side if 8444 is taken on the TrueNAS box.
+      - "8444:8444"
 
     environment:
       # TrueNAS apps user (`id apps` -> uid=568 gid=568). Override here if you
@@ -36,9 +40,11 @@ services:
       PGID: "568"
       TZ: "America/New_York"
       SCREEN_GEOMETRY: "1920x1080x24"
-      # Set a password to require auth on the noVNC page. Leave blank for none
-      # (only safe if the port is firewalled or behind a reverse proxy).
-      VNC_PASSWORD: ""
+      # KasmVNC web UI BasicAuth credentials. VNC_PASSWORD is REQUIRED — the
+      # entrypoint refuses to start with an empty password to prevent
+      # accidentally exposing an unauthenticated desktop on the LAN.
+      VNC_USERNAME: "kasm_user"
+      VNC_PASSWORD: "change-me-please"
 
     volumes:
       # Claude Desktop config + chat history + MCP server config + the bundled
@@ -62,10 +68,10 @@ services:
     # Electron + Chromium need a decent /dev/shm or tabs crash.
     shm_size: "1gb"
 
-    # Healthcheck: probe a file that actually exists in the noVNC web root.
-    # The Debian novnc package doesn't ship index.html, so / returns 404.
+    # Healthcheck: hit KasmVNC's web UI root. KasmVNC serves the client at /
+    # (200 OK), so a plain HTTP probe is enough.
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:6080/vnc.html"]
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8444/"]
       interval: 30s
       timeout: 5s
       retries: 3
