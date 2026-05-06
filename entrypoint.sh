@@ -125,11 +125,14 @@ chown "${PUID}:${PGID}" "${HOME}/.vnc/xstartup" "${HOME}/.vnc/kasmvnc.yaml"
 # we can't exec claude-desktop afterward; instead we let it daemonize, wait
 # for the X socket, then exec claude-desktop in the foreground so the
 # container's PID 1 tracks it (when claude-desktop dies the container exits).
-# vncserver daemonizes Xvnc and the bundled web server. We pass the display,
-# geometry, depth, websocket port, and bind interface explicitly. With a
-# user-provided ~/.vnc/xstartup present, vncserver runs that and skips its own
-# desktop-environment autoselect — no -select-de needed.
+#
+# -select-de manual: KasmVNC's vncserver wrapper invokes select-de.sh on every
+# start to pick a desktop environment, even when ~/.vnc/xstartup already
+# exists. Without a TTY (we're in a container) the wizard prints
+# "Failed to execute /usr/lib/kasmvncserver/select-de.sh" and the server
+# never comes up. "manual" tells the wrapper to honor our xstartup as-is.
 gosu "${USER}" vncserver "${DISPLAY}" \
+  -select-de manual \
   -geometry "${SCREEN_W}x${SCREEN_H}" \
   -depth "${SCREEN_D}" \
   -websocketPort "${KASMVNC_PORT}" \
